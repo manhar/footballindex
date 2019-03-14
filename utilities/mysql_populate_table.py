@@ -15,9 +15,20 @@ import my_config
 current_datetime=datetime.datetime.today()
 
 
-sql_alchemy =my_config.ConfigSectionMap("crypto_sql_alchemy")['db_parameters']
+sql_alchemy =my_config.ConfigSectionMap("sql_alchemy")['db_parameters']
 engine = create_engine(sql_alchemy)
-sql_connector = my_config.ConfigSectionMap("crypto_mysql_connector")
+sql_connector = my_config.ConfigSectionMap("mysql_connector")
+
+f=open("/home/wolverine/projects/secret/pwd.txt")
+pwd=f.read().replace("\n","")
+f.close()
+
+sql_connector["password"]=pwd
+
+sql_alchemy=sql_alchemy.replace("<user>",sql_connector["user"]).replace("<database>",sql_connector["database"]).replace("<host>",sql_connector["host"]).replace("<pwd>",sql_connector["password"])
+
+
+
 
 def insert_f_daily_score(scores):
     query = "INSERT INTO f_daily_score( \
@@ -79,7 +90,7 @@ def insert_f_daily_score_staging(scores):
 
 
 def insert_f_daily_news(values):
-    query = "INSERT INTO findex.f_daily_news(hash_key ,feed_name ,title,link,comments,description,pubdate,pos_score,neg_score) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+    query = "INSERT INTO f_daily_news(hash_key ,feed_name ,title,link,comments,description,pubdate,pos_score,neg_score) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 
     try:
 
@@ -228,25 +239,25 @@ def getNewsPubDateByPlayer(pid, team, hours_filter):
     #query= """ select  datetime_id as txn_datetime  ,  player_id, cur_bprice as bprice, last_5min_pct_change, last_24hr_pct_change from f_player_stats where player_id= '"""+ pid+"'"
     if (team=="" and  pid==""):
         query= """select hash_key, pubdate, title , feed_name
-        from findex.f_daily_news n
+        from f_daily_news n
         where
         pubdate >= '"""+dt+"""'"""
 
     elif team=="":
         query= """select hash_key, pubdate, title , feed_name
-        from findex.f_daily_news n
+        from f_daily_news n
         where
         pubdate >= '"""+dt+"""'
         and match(title) against ('"""+pid+"""')"""
     elif pid=="":
         query= """select hash_key, pubdate, title , feed_name
-        from findex.f_daily_news n
+        from f_daily_news n
         where
         pubdate >= '"""+dt+"""'
         and match(title) against ('"""+team+"""')"""
     else:
         query= """ select hash_key, pubdate, title , feed_name
-        from findex.f_daily_news n
+        from f_daily_news n
         where
         pubdate >= '"""+dt+"""'
         and match(title ) against( '"""+team+"""')
@@ -264,7 +275,7 @@ def getNewsPubDateByPlayer(pid, team, hours_filter):
 
 def getLatestNewsKey(HH):
     #This function returns the latest news hash keys after HH hours
-    query=""" select hash_key from findex.f_daily_news where STR_TO_DATE( pubdate, '%Y%m%d %H:%i:%s') >=  DATE_ADD(now(), INTERVAL -"""+str(HH)+""" HOUR) ;"""
+    query=""" select hash_key from f_daily_news where STR_TO_DATE( pubdate, '%Y%m%d %H:%i:%s') >=  DATE_ADD(now(), INTERVAL -"""+str(HH)+""" HOUR) ;"""
     df=pd.DataFrame()
     df_arr=[]
     try:
@@ -375,38 +386,6 @@ def insert_f_portfolio_txn(values):
         conn.commit()
     except Error as e:
         print('Error insert_f_portfolio_txn:', e)
-
-    finally:
-        cursor.close()
-        conn.close()
-
-
-
-def add_ticker(values):
-    query = "INSERT INTO crypto_trading.ticker(\
-   `pair` ,\
-   `exec_time` ,\
-   `exchange` ,\
-   `high` ,\
-   `last` ,\
-   `timestamp`,\
-   `bid` ,\
-   `vwap`,\
-   `volume` ,\
-   `low`,\
-   `ask` ,\
-   `open`) "\
-    "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-
-    try:
-
-        conn = MySQLConnection(** sql_connector)
-        cursor = conn.cursor()
-        cursor.executemany(query, values)
-
-        conn.commit()
-    except Error as e:
-        print('Error add_ticker:', e , query)
 
     finally:
         cursor.close()
