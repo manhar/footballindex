@@ -1,6 +1,5 @@
-import sys
-sys.path.insert(0, '../utilities/')
-import add_subdir_to_path
+#!/usr/bin/python
+
 
 from configparser import ConfigParser
 

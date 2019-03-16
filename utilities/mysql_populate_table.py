@@ -1,32 +1,28 @@
-import sys
-sys.path.insert(0, '../utilities')
-import add_subdir_to_path
+#!/usr/bin/python
 
 
-
+import os
 from mysql.connector import MySQLConnection, Error
 import pandas as pd
 from sqlalchemy import create_engine
 import datetime
 import dateutil.relativedelta
-import my_config
+from utilities import my_config
+
+
+pwd = os.getenv('mysql_pwd', "ERROR")
 
 
 current_datetime=datetime.datetime.today()
 
-
-sql_alchemy =my_config.ConfigSectionMap("sql_alchemy")['db_parameters']
-engine = create_engine(sql_alchemy)
 sql_connector = my_config.ConfigSectionMap("mysql_connector")
-
-f=open("/home/wolverine/projects/secret/pwd.txt")
-pwd=f.read().replace("\n","")
-f.close()
-
 sql_connector["password"]=pwd
-
-sql_alchemy=sql_alchemy.replace("<user>",sql_connector["user"]).replace("<database>",sql_connector["database"]).replace("<host>",sql_connector["host"]).replace("<pwd>",sql_connector["password"])
-
+sql_alchemy = my_config.ConfigSectionMap("sql_alchemy")['db_parameters']
+sql_alchemy=sql_alchemy.replace("<user>",sql_connector["user"]).\
+                        replace("<database>",sql_connector["database"]).\
+                        replace("<host>",sql_connector["host"]).\
+                        replace("<pwd>",sql_connector["password"])
+engine = create_engine(sql_alchemy)
 
 
 

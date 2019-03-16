@@ -1,17 +1,20 @@
-import sys
-sys.path.insert(0, '../utilities')
-import add_subdir_to_path , my_utilities
+#!/usr/bin/python
 
-import requests
+"""
+This code connects to the footballindex API, reads the JSON data from API, gets the usueful attributes and save the data to
+SQL server DB
+
+"""
+
+
 import pandas as pd
-import json
 from datetime import datetime, timedelta
-import time
-import decimal
+
 import logging
-from smsapi import send_sms_alert
-from mysql_populate_table import insert_f_daily_score ,insert_f_daily_score_staging
-import my_config
+from utilities import mysql_populate_table
+#from smsapi import send_sms_alert
+#from mysql_populate_table import insert_f_daily_score ,insert_f_daily_score_staging
+from utilities import my_config, mysql_populate_table as sql, my_utilities
 import ssl
 
 ## Disable SSL certificate check
@@ -32,6 +35,13 @@ api_link=my_config.ConfigSectionMap("football")['api_link']
 
 
 def coalesce(dic, lkp_key, default_value):
+    """
+
+    :param dic: dictionary
+    :param lkp_key: Key to look up in dictionary
+    :param default_value: Default value to return if the Key is not found
+    :return: Value of specified key if found else default_value
+    """
     if lkp_key in dic:
         return str((dic[lkp_key]))
     else:
@@ -52,6 +62,7 @@ def get_data(datetime_id,df,txn_date,txn_time,data_file):
             days_to_subtract+=1
 
         trend_date=trend_date.strftime('%Y%m%d')
+
         try:
 
             #x=1/0
@@ -90,7 +101,8 @@ def get_data(datetime_id,df,txn_date,txn_time,data_file):
         except Exception as e:
             logging.debug("error occured while parsing json file. : " + str(e))
             print(str(e))
-    insert_f_daily_score(result_db)
+    sql.insert_f_daily_score(result_db)
+    print(result_db)
 
 def acquire_football_scores():
     cur_datetime=datetime.today()
@@ -115,6 +127,7 @@ def acquire_football_scores():
             my_utilities.write_to_file( football_feed_acquisition_date, datetime_id)
             logging.info("Data Aquisition completed successfully, going to sleep...")
         except Exception as e:
+            print(e)
             logging.debug("Error encoutered during data aquisition:" + str(e))
             df.to_csv(dump_file)
     except Exception as e:
@@ -123,6 +136,6 @@ def acquire_football_scores():
         print (  datetime_id +"\tError connecting to API:" + str(e) )
 
 
-
 #main
-acquire_football_scores()
+if __name__ == "__main__":
+    acquire_football_scores()
